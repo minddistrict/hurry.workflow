@@ -22,9 +22,10 @@ class WorkflowVersions(workflow.WorkflowVersions):
     def getVersions(self, state, id):
         result = []
         for version in self.versions:
-            state = interfaces.IWorkflowState(version)
-            if state.getId() == id and state.getState() == state:
-                result.append(version)
+            workflow_state = interfaces.IWorkflowState(version)
+            if workflow_state.getId() == id:
+                if workflow_state.getState() == state:
+                    result.append(version)
         return result
 
     def getVersionsWithAutomaticTransitions(self):
