@@ -22,8 +22,8 @@ class WorkflowVersions(workflow.WorkflowVersions):
     def getVersions(self, state, id):
         result = []
         for version in self.versions:
-            state_adapter = interfaces.IWorkflowState(version)
-            if state_adapter.getId() == id and state_adapter.getState() == state:
+            state = interfaces.IWorkflowState(version)
+            if state.getId() == id and state.getState() == state:
                 result.append(version)
         return result
 
@@ -47,6 +47,7 @@ class WorkflowVersions(workflow.WorkflowVersions):
     def clear(self):
         self.versions = []
 
+
 def workflowSetUp(doctest):
     testing.setUp(doctest)
     component.provideAdapter(
@@ -64,6 +65,7 @@ def workflowSetUp(doctest):
     component.provideUtility(
         WorkflowVersions(),
         interfaces.IWorkflowVersions)
+
 
 def test_suite():
     return unittest.TestSuite((
