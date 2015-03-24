@@ -6,6 +6,7 @@ from zope.event import notify
 from zope.security.checker import CheckerPublic
 from zope.security.interfaces import NoInteraction, Unauthorized
 from zope.security.management import getInteraction
+from zope.security.proxy import removeSecurityProxy
 from zope import component
 
 from zope.annotation.interfaces import IAnnotations
@@ -79,7 +80,6 @@ class Workflow(object):
         self._id_transitions = {}
         for transition in transitions:
             self._register(transition)
-        self._p_changed = True
 
     def getTransitions(self, source):
         try:
@@ -105,7 +105,6 @@ class WorkflowState(object):
     def __init__(self, context):
         # XXX okay, I'm tired of it not being able to set annotations, so
         # we'll do this. Ugh.
-        from zope.security.proxy import removeSecurityProxy
         self.context = removeSecurityProxy(context)
         self._annotations = IAnnotations(self.context)
 
