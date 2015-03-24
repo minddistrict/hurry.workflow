@@ -31,7 +31,7 @@ def NullAction(wf, context):
 
 # XXX this is needed to make the tests pass in the absence of
 # interactions..
-def nullCheckPermission(permission, principal_id):
+def nullCheckPermission(permission, context):
     return True
 
 
