@@ -144,29 +144,30 @@ class WorkflowInfo(object):
     def state(cls, obj):
         return component.getAdapter(obj, IWorkflowState, name=cls.name)
 
-    def fireTransition(self, transition_id, comment=None, side_effect=None,
-                       check_security=True):
+    def fireTransition(
+            self, transition_id,
+            comment=None, side_effect=None, check_security=True):
         state = self.state(self.context)
-        # this raises InvalidTransitionError if id is invalid for current state
         transition = self.wf.getTransition(state.getState(), transition_id)
-        # check whether we may execute this workflow transition
-        try:
-            interaction = getInteraction()
-        except NoInteraction:
-            checkPermission = nullCheckPermission
-        else:
-            if check_security:
-                checkPermission = interaction.checkPermission
-            else:
+
+        if check_security and transition.permission is not CheckerPublic:
+            # check whether we may execute this workflow transition
+            try:
+                interaction = getInteraction()
+            except NoInteraction:
                 checkPermission = nullCheckPermission
-        if not checkPermission(transition.permission, self.context):
-            raise Unauthorized(self.context,
-                               'transition: %s' % transition_id,
-                               transition.permission)
+            else:
+                checkPermission = interaction.checkPermission
+            if not checkPermission(transition.permission, self.context):
+                raise Unauthorized(
+                    self.context,
+                    'transition: {}'.format(transition_id),
+                    transition.permission)
+
         # now make sure transition can still work in this context
         if not transition.condition(self, self.context):
-            # XXX should we include state info here? if so, what?
-            raise ConditionFailedError
+            raise ConditionFailedError()
+
         # perform action, return any result as new version
         result = transition.action(self, self.context)
         if result is not None:
@@ -202,10 +203,10 @@ class WorkflowInfo(object):
             notify(ObjectModifiedEvent(result))
         return result
 
-    def fireTransitionToward(self, state, comment=None, side_effect=None,
-                             check_security=True):
-        transition_ids = self.getFireableTransitionIdsToward(state,
-                                                             check_security)
+    def fireTransitionToward(
+            self, state, comment=None, side_effect=None, check_security=True):
+        transition_ids = self.getFireableTransitionIdsToward(
+            state, check_security)
         if not transition_ids:
             raise interfaces.NoTransitionAvailableError(
                 self.state(self.context).getState(),
@@ -214,8 +215,8 @@ class WorkflowInfo(object):
             raise interfaces.AmbiguousTransitionError(
                 self.state(self.context).getState(),
                 state)
-        return self.fireTransition(transition_ids[0],
-                                   comment, side_effect, check_security)
+        return self.fireTransition(
+            transition_ids[0], comment, side_effect, check_security)
 
     def fireTransitionForVersions(self, state, transition_id):
         id = self.state(self.context).getId()
@@ -244,11 +245,12 @@ class WorkflowInfo(object):
         return wf_versions.hasVersion(state, id)
 
     def getManualTransitionIds(self, check_security=True):
-        try:
-            checkPermission = getInteraction().checkPermission
-        except NoInteraction:
-            checkPermission = nullCheckPermission
-        if not check_security:
+        if check_security:
+            try:
+                checkPermission = getInteraction().checkPermission
+            except NoInteraction:
+                checkPermission = nullCheckPermission
+        else:
             checkPermission = nullCheckPermission
         return [transition.transition_id for transition in
                 sorted(self._getTransitions(MANUAL)) if
