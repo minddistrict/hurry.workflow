@@ -1,4 +1,5 @@
-import random, sys
+import random
+import sys
 
 from zope.interface import implements
 from zope.event import notify
@@ -13,21 +14,25 @@ from zope.component.interfaces import ObjectEvent
 
 from hurry.workflow import interfaces
 from hurry.workflow.interfaces import MANUAL, AUTOMATIC, SYSTEM
-from hurry.workflow.interfaces import\
-     IWorkflow, IWorkflowState, IWorkflowInfo, IWorkflowVersions
-from hurry.workflow.interfaces import\
-     InvalidTransitionError, ConditionFailedError
+from hurry.workflow.interfaces import IWorkflow, IWorkflowState
+from hurry.workflow.interfaces import IWorkflowInfo, IWorkflowVersions
+from hurry.workflow.interfaces import InvalidTransitionError
+from hurry.workflow.interfaces import ConditionFailedError
+
 
 def NullCondition(wf, context):
     return True
 
+
 def NullAction(wf, context):
     pass
+
 
 # XXX this is needed to make the tests pass in the absence of
 # interactions..
 def nullCheckPermission(permission, principal_id):
     return True
+
 
 class Transition(object):
 
@@ -51,6 +56,7 @@ class Transition(object):
 
     def __cmp__(self, other):
         return cmp(self.order, other.order)
+
 
 # in the past this subclassed from zope.container.Contained and
 # persistent.Persistent.
@@ -90,10 +96,11 @@ class Workflow(object):
     def getTransitionById(self, transition_id):
         return self._id_transitions[transition_id]
 
+
 class WorkflowState(object):
     implements(IWorkflowState)
     state_key = "hurry.workflow.state"
-    id_key  = "hurry.workflow.id"
+    id_key = "hurry.workflow.id"
 
     def __init__(self, context):
         # XXX okay, I'm tired of it not being able to set annotations, so
@@ -120,6 +127,7 @@ class WorkflowState(object):
 
     def getId(self):
         return self._annotations.get(self.id_key, None)
+
 
 class WorkflowInfo(object):
     implements(IWorkflowInfo)
@@ -152,8 +160,7 @@ class WorkflowInfo(object):
                 checkPermission = interaction.checkPermission
             else:
                 checkPermission = nullCheckPermission
-        if not checkPermission(
-            transition.permission, self.context):
+        if not checkPermission(transition.permission, self.context):
             raise Unauthorized(self.context,
                                'transition: %s' % transition_id,
                                transition.permission)
@@ -284,6 +291,7 @@ class WorkflowInfo(object):
         return [transition for transition in transitions if
                 transition.trigger == trigger]
 
+
 class WorkflowVersions(object):
     implements(IWorkflowVersions)
 
@@ -310,6 +318,7 @@ class WorkflowVersions(object):
         for version in self.getVersionsWithAutomaticTransitions():
             IWorkflowInfo(version).fireAutomatic()
 
+
 class WorkflowTransitionEvent(ObjectEvent):
     implements(interfaces.IWorkflowTransitionEvent)
 
@@ -319,6 +328,7 @@ class WorkflowTransitionEvent(ObjectEvent):
         self.destination = destination
         self.transition = transition
         self.comment = comment
+
 
 class WorkflowVersionTransitionEvent(WorkflowTransitionEvent):
     implements(interfaces.IWorkflowVersionTransitionEvent)
